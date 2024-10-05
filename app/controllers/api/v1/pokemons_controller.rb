@@ -1,15 +1,15 @@
 module Api
-    module V1
-      class PokemonsController < ApplicationController
-        before_action :set_pokemon, only: [:capture, :release]
+  module V1
+    class PokemonsController < ApplicationController
+      before_action :set_pokemon, only: [:capture, :release]
 
-        # GET /api/v1/pokemons
-        # Lista todos los Pokémon con filtros opcionales y paginación
-        def index
-          pokemons = PokemonFilterService.new(Pokemon.all, filter_params).filter
-          paginated_pokemons = PaginationService.new(pokemons, page_params).paginate
-          render json: PokemonSerializer.new(paginated_pokemons).serialized_json
-        end
+      # GET /api/v1/pokemons
+      def index
+        pokemons = Pokemon.all
+        pokemons = PokemonFilterService.new(pokemons, filter_params).filter
+        paginated_pokemons = pokemons.page(page_params[:page]).per(page_params[:per_page])
+        render json: PokemonSerializer.new(paginated_pokemons).serialized_json
+      end
 
         # POST /api/v1/pokemons/:id/capture
         # Captura un Pokémon específico
@@ -48,12 +48,15 @@ module Api
 
         # Permite solo los parámetros de filtro específicos
         def filter_params
-          params.permit(:name, :type)
+          params.slice(:name, :type)
         end
 
         # Permite solo los parámetros de paginación específicos
         def page_params
-          params.permit(:page, :per_page)
+          {
+            page: params[:page] || 1,
+            per_page: params[:per_page] || 10
+          }
         end
       end
     end
